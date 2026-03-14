@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>PhishFree — Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-light: #e8f0fe;
+      --primary-dark: #3a56d4;
+      --secondary: #6c757d;
+      --success: #4cc9a4;
+      --danger: #f72585;
+      --warning: #ff9e00;
+      --info: #4895ef;
+      --light: #f8f9fa;
+      --dark: #2b2d42;
+      --gray-100: #f8f9fa;
+      --gray-200: #e9ecef;
+      --gray-300: #dee2e6;
+      --gray-400: #ced4da;
+      --gray-500: #adb5bd;
+      --gray-600: #6c757d;
+      --gray-700: #495057;
+      --gray-800: #343a40;
+      --gray-900: #212529;
+      --border-radius: 12px;
+      --box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.05);
+      --font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family);
+      padding: 0;
+      margin: 0;
+      color: var(--dark);
+      background: linear-gradient(135deg, #f5f7fb 0%, #e6e9ff 100%);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      background: white;
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--gray-200);
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      border-radius: 0 0 12px 12px;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--primary);
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .dashboard-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dashboard-title svg {
+      width: 32px;
+      height: 32px;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      margin: 0 -10px 16px;
+      gap: 16px 0;
+    }
+
+    .col {
+      padding: 0 10px;
+      flex: 1 0 0%;
+    }
+
+    .col-3 {
+      flex: 0 0 25%;
+      max-width: 25%;
+    }
+
+    .col-4 {
+      flex: 0 0 33.333333%;
+      max-width: 33.333333%;
+    }
+
+    .col-6 {
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+
+    .col-8 {
+      flex: 0 0 66.666667%;
+      max-width: 66.666667%;
+    }
+
+    .col-12 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: var(--border-radius);
+      box-shadow: var(--box-shadow);
+      padding: 20px;
+      height: 100%;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(0,0,0,0.03);
+    }
+
+    .card:hover {
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1), 0 5px 10px rgba(0,0,0,0.04);
+      transform: translateY(-2px);
+    }
+
+    /* ensure cards are positioned relative so z-index works predictably */
+    .card { position: relative; z-index: 1; }
+
+    /* table-container class used above (scroll inside) */
+    .table-container {
+      width: 100%;
+      background: white;
+      border-radius: 8px;
+      overflow: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    /* ---- Fixes for Results table alignment and Actions column ---- */
+/* Put this near the bottom of your <style> so it overrides previous table rules */
+
+#resultsTable {
+  width: 100%;
+  table-layout: fixed;          /* make column widths respect widths below */
+  border-collapse: collapse;
+}
+
+/* Text/URL column */
+#resultsTable th:nth-child(8),
+#resultsTable td:nth-child(8) {
+  white-space: normal;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+/* Reason column — allow wrapping and word-break so it won't force table-wide overflow */
+#resultsTable th:nth-child(9),
+#resultsTable td:nth-child(9) {
+  width: 28%;
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Set specific widths for columns so the remaining space is distributed nicely */
+/* Time column */
+#resultsTable th:nth-child(1),
+#resultsTable td:nth-child(1) {
+  width: 70px;
+}
+/* Risk Level column */
+#resultsTable th:nth-child(2),
+#resultsTable td:nth-child(2) {
+  width: 110px;
+}
+/* Screenshot column */
+#resultsTable th:nth-child(7),
+#resultsTable td:nth-child(7) {
+  width: 100px;
+  text-align: center;
+}
+
+/* Score columns - fixed width for better alignment */
+#resultsTable th:nth-child(3),
+#resultsTable td:nth-child(3),
+#resultsTable th:nth-child(4),
+#resultsTable td:nth-child(4),
+#resultsTable th:nth-child(5),
+#resultsTable td:nth-child(5),
+#resultsTable th:nth-child(6),
+#resultsTable td:nth-child(6) {
+  width: 80px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Make action cell a flex container so the buttons align nicely */
+#resultsTable td.actions-cell {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* Small helper for action buttons inside table to prevent wrapping */
+#resultsTable td.actions-cell .btn {
+  white-space: nowrap;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+/* prevent unexpected translucent pseudo-elements covering the table */
+.card::before, .card::after {
+  display: none !important;
+}
+
+/* ensure scrollbars don't cause sticky header weirdness */
+.table-container { box-sizing: border-box; -webkit-overflow-scrolling: auto; }
+
+
+    /* truncate long hash cells and allow clicking/copying */
+    #anchorsTableDetailed td, #anchorsTableDetailed th {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 180px;
+    }
+
+    /* if you want code-style for hash cells */
+    #anchorsTableDetailed td code { 
+      font-family: 'Fira Code', monospace; 
+      font-size: 12px; 
+      background: var(--gray-100);
+      padding: 4px 6px;
+      border-radius: 4px;
+      color: var(--primary);
+    }
+
+    /* keep table head visible inside scroller: sticky works now (no transform on parents) */
+    #anchorsTableDetailed thead th {
+      position: sticky;
+      top: 0;
+      background: var(--gray-100);
+      z-index: 2;
+      font-weight: 600;
+      padding: 14px 16px;
+    }
+
+    /* prevent charts from overlapping with other cards */
+    .chart-container { position: relative; z-index: 0; }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+      color: var(--dark);
+    }
+
+    .stat-card {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 16px;
+      background: linear-gradient(135deg, #fff 0%, #f8f9ff 100%);
+      border: 1px solid rgba(67, 97, 238, 0.1);
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 800;
+      margin: 8px 0;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--gray-600);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-high {
+      background: linear-gradient(135deg, var(--danger) 0%, #b5179e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-medium {
+      background: linear-gradient(135deg, var(--warning) 0%, #ff6b00 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-low {
+      background: linear-gradient(135deg, var(--success) 0%, #2ec4b6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .badge {
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 20px;
+      display: inline-block;
+      font-size: 12px;
+    }
+
+    .badge-high {
+      background: rgba(247, 37, 133, 0.15);
+      color: var(--danger);
+    }
+
+    .badge-medium {
+      background: rgba(255, 158, 0, 0.15);
+      color: var(--warning);
+    }
+
+    .badge-low {
+      background: rgba(76, 201, 164, 0.15);
+      color: var(--success);
+    }
+
+    /* friendly mini-score visuals for model preview */
+.model-summary { font-family: var(--font-family); font-size:13px; color:var(--gray-800); }
+.model-line { display:flex; justify-content:space-between; align-items:center; margin:6px 0; }
+.model-label { font-weight:700; color:var(--gray-700); }
+.model-small { font-size:12px; color:var(--gray-600); }
+.model-score-bar { width:160px; height:16px; background:#f0f0f0; border-radius:8px; overflow:hidden; margin-left:10px; }
+.model-score-fill { height:100%; display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:12px; }
+.model-sus { background: linear-gradient(90deg,#f72585,#b5179e); }
+.model-mid { background: linear-gradient(90deg,#ff9e00,#ff6b00); }
+.model-safe { background: linear-gradient(90deg,#4cc9a4,#2ec4b6); }
+
+.model-top-neighbors { margin:6px 0; padding-left:12px; font-size:13px; color:var(--gray-700); }
+.model-thumb { max-width:100%; border-radius:6px; border:1px solid #eee; margin-top:8px; }
+
+
+    /* Risk bar visuals for dashboard score column */
+.risk-bar {
+  width: 100px;
+  height: 18px;
+  background: #eee;
+  border-radius: 6px;
+  overflow: hidden;
+  display:inline-block;
+  vertical-align: middle;
+}
+.risk-bar-fill {
+  height: 100%;
+  text-align: center;
+  font-size: 12px;
+  line-height: 18px;
+  color: white;
+  white-space: nowrap;
+  padding-left: 6px;
+  padding-right: 6px;
+  box-sizing: border-box;
+}
+.risk-high { background: linear-gradient(90deg,#f72585,#b5179e); }
+.risk-medium { background: linear-gradient(90deg,#ff9e00,#ff6b00); }
+.risk-low { background: linear-gradient(90deg,#4cc9a4,#2ec4b6); }
+.risk-pct { margin-left: 8px; font-weight:700; font-size:13px; color:var(--gray-700); vertical-align:middle;}
+
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 16px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      gap: 6px;
+      box-shadow: 0 4px 6px rgba(67, 97, 238, 0.2);
+    }
+
+    .btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(67, 97, 238, 0.25);
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--gray-300);
+      color: var(--gray-700);
+      box-shadow: none;
+    }
+
+    .btn-outline:hover {
+      background: var(--gray-100);
+      color: var(--dark);
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+
+    select, input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid var(--gray-300);
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+      transition: all 0.2s ease;
+    }
+
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .filter-item {
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .controls-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .status-text {
+      font-size: 13px;
+      color: var(--gray-600);
+      padding: 6px 10px;
+      background: var(--gray-100);
+      border-radius: 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    th {
+      background: var(--gray-100);
+      font-weight: 600;
+      color: var(--gray-700);
+      position: sticky;
+      top: 0;
+    }
+
+    tr {
+      transition: background 0.2s ease;
+    }
+
+    tr:hover {
+      background: var(--gray-100);
+    }
+
+    .top-list {
+      max-height: 160px;
+      overflow: auto;
+      padding-left: 0;
+      margin: 0;
+    }
+
+    .top-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--gray-100);
+      font-size: 13px;
+    }
+
+    .top-list li:last-child {
+      border-bottom: none;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      width: 100%;
+    }
+
+    .muted {
+      color: var(--gray-500);
+      font-size: 13px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    pre.rawPre {
+      font-size: 12px;
+      white-space: pre-wrap;
+      max-height: 220px;
+      overflow: auto;
+      background: var(--gray-900);
+      color: var(--gray-100);
+      padding: 16px;
+      border-radius: 8px;
+      margin: 0;
+      font-family: 'Fira Code', monospace;
+      position: relative;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      z-index: 10;
+    }
+
+    .close-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+
+    .highlightNote {
+      margin: 16px 0;
+      padding: 14px 18px;
+      background: var(--primary-light);
+      border-left: 4px solid var(--primary);
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .highlightRow {
+      background: linear-gradient(90deg, rgba(67, 97, 238, 0.08), rgba(255,255,255,0)) !important;
+      transition: all 0.3s ease;
+      box-shadow: inset 3px 0 0 var(--primary);
+    }
+
+    /* pulse animation for attention */
+    @keyframes phishfree-pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .pulse-ai {
+      animation: phishfree-pulse 1.5s infinite;
+    }
+
+    /* Anchor status and truncation helpers */
+    .anchor-status {
+      display: inline-block;
+      max-width: 62%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: middle;
+      font-size: 13px;
+      color: var(--gray-700);
+    }
+
+    .anchor-status a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .anchor-status a:hover { text-decoration: underline; }
+
+    .anchor-error {
+      display: inline-block;
+      margin-left: 10px;
+      color: var(--gray-600);
+      font-size: 12px;
+    }
+
+    #anchorsTableDetailed td, #anchorsTableDetailed th {
+      max-width: 180px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 10px 12px;
+    }
+
+    .anchor-success { color: var(--success); font-weight:600; }
+    .anchor-fail { color: var(--danger); font-weight:600; }
+
+    .anchor-explorer { 
+      color: var(--primary); 
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .anchor-explorer:hover { text-decoration: underline; }
+
+    /* Improved table styling */
+    .anchors-table-wrapper {
+      margin: 20px 0;
+    }
+
+    .anchors-table-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .anchors-table-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--dark);
+      margin: 0;
+    }
+
+    /* Add some spacing utilities */
+    .mb-16 { margin-bottom: 16px; }
+    .mb-20 { margin-bottom: 20px; }
+    .mt-20 { margin-top: 20px; }
+
+    @media (max-width: 1200px) {
+      .col-3, .col-4, .col-6, .col-8, .col-12 {
+        flex: 0 0 100%;
+        max-width: 100%;
+      }
+      
+      .filter-item {
+        min-width: 100%;
+      }
+      
+      .controls-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      
+      #anchorsTableDetailed {
+        font-size: 12px;
+      }
+      
+      #anchorsTableDetailed td, #anchorsTableDetailed th {
+        padding: 8px 10px;
+      }
+      
+      .card {
+        padding: 16px;
+      }
+      
+      .stat-value {
+        font-size: 28px;
+      }
+    }
+
+    /* Add some modern touches */
+    ::selection {
+      background: rgba(67, 97, 238, 0.2);
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--gray-100);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--gray-400);
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--gray-500);
+    }
+    
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <div class="dashboard-title">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#4361ee" stroke-width="2"/>
+          <path d="M12 16.5C14.4853 16.5 16.5 14.4853 16.5 12C16.5 9.51472 14.4853 7.5 12 7.5C9.51472 7.5 7.5 9.51472 7.5 12C7.5 14.4853 9.51472 16.5 12 16.5Z" stroke="#4361ee" stroke-width="2"/>
+          <path d="M12 13.5C12.8284 13.5 13.5 12.8284 13.5 12C13.5 11.1716 12.8284 10.5 12 10.5C11.1716 10.5 10.5 11.1716 10.5 12C10.5 12.8284 11.1716 13.5 12 13.5Z" fill="#4361ee"/>
+        </svg>
+        <h1>PhishFree Dashboard</h1>
+      </div>
+      <div class="muted">Real-time phishing detection analytics</div>
+    </div>
+  </header>
+  
+
+  <!-- MODEL STATUS BANNER (added) -->
+  <div id="modelBanner" style="display:flex;gap:16px;align-items:center;padding:12px 20px;background:#ffffff;margin:0 auto 20px;border-radius:8px;max-width:1600px;box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+    <div style="font-weight:600;color:var(--dark);">Live Engines:</div>
+    <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:var(--success);"></div>LLM Text: <strong>Working</strong></div>
+    <div style="display:flex;align-items:center;gap:6px;"><div id="cnnDot" style="width:8px;height:8px;border-radius:50%;background:var(--warning);"></div>CNN Visual: <strong id="modelUI_cnnState">checking…</strong></div>
+    <div style="display:flex;align-items:center;gap:6px;"><div id="gnnDot" style="width:8px;height:8px;border-radius:50%;background:var(--warning);"></div>GNN Graph: <strong id="modelUI_gnnNodes">?</strong> nodes</div>
+    <div id="modelUI_lastCheck" style="margin-left:auto;font-size:12px;color:var(--gray-600)">last check: --</div>
+    <button id="modelUI_refreshBtn" class="btn btn-outline" style="margin-left:12px;padding:6px 12px;font-size:13px;border-color:var(--gray-300);color:var(--dark);">Refresh status</button>
+  </div>
+
+  <div class="container">
+    <!-- Summary Cards Row -->
+    <div class="row">
+      <div class="col col-3">
+        <div class="card stat-card">
+          <div class="stat-label">Total Checks</div>
+          <div class="stat-value" id="total">0</div>
+          <div class="muted" id="lastUpdated"></div>
+        </div>
+      </div>
+      
+      <div class="col col-3">
+        <div class="card stat-card">
+          <div class="stat-label">High Risk</div>
+          <div class="stat-value stat-high" id="countHigh">0</div>
+          <div class="muted">Malicious / high risk</div>
+        </div>
+      </div>
+      
+      <div class="col col-3">
+        <div class="card stat-card">
+          <div class="stat-label">Medium Risk</div>
+          <div class="stat-value stat-medium" id="countMedium">0</div>
+          <div class="muted">Suspicious activity</div>
+        </div>
+      </div>
+      
+      <div class="col col-3">
+        <div class="card stat-card">
+          <div class="stat-label">Low Risk</div>
+          <div class="stat-value stat-low" id="countLow">0</div>
+          <div class="muted">Verified safe</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Row -->
+    <div class="row">
+      <!-- Left Column (Controls and Anchors) -->
+      <div class="col col-8">
+        <!-- Controls Card -->
+        <div class="card mb-16">
+          <div class="card-header">
+            <h3 class="card-title">Controls & Filters</h3>
+          </div>
+          
+          <div class="controls-row">
+            <button id="refreshBtn" class="btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh Data
+            </button>
+            <button id="downloadCsvBtn" class="btn btn-outline" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Export CSV
+            </button>
+            <button id="clearLogsBtn" class="btn btn-outline" style="color:var(--danger, #f72585); border-color:rgba(247, 37, 133, 0.3);">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Clear Logs
+            </button>
+            <span id="dashboardStatus" class="status-text"></span>
+            <!-- Anchor controls -->
+            <button id="anchorNowBtn" class="btn btn-outline">Anchor Last 50 Rows</button>
+            <button id="anchorTestBtn" class="btn btn-outline">Test Anchor (no tx)</button>
+            <span id="anchorStatus" class="muted"></span>
+          </div>
+          
+          <div class="filter-row">
+            <div class="filter-item">
+              <label for="labelFilter">Risk Level</label>
+              <select id="labelFilter">
+                <option value="">All Risk Levels</option>
+                <option value="high">High Risk</option>
+                <option value="medium">Medium Risk</option>
+                <option value="low">Low Risk</option>
+              </select>
+            </div>
+            
+            <div class="filter-item">
+              <label for="dateFrom">Date From</label>
+              <input id="dateFrom" type="date">
+            </div>
+            
+            <div class="filter-item">
+              <label for="dateTo">Date To</label>
+              <input id="dateTo" type="date">
+            </div>
+          </div>
+          
+          <!-- Live Engine Status Graphic -->
+          <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--gray-200);">
+            <div style="font-size:12px; font-weight:600; color:var(--gray-600); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px;">Active Detection Engines</div>
+            <div style="display:flex; gap:12px; justify-content:space-between; flex-wrap:wrap;">
+              
+              <div style="flex:1; min-width:160px; background:rgba(67, 97, 238, 0.05); border:1px solid rgba(67, 97, 238, 0.15); border-radius:8px; padding:10px 14px; display:flex; align-items:center;">
+                <div style="width:32px; height:32px; border-radius:6px; background:rgba(67, 97, 238, 0.1); display:flex; align-items:center; justify-content:center; margin-right:10px; color:var(--primary);">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                </div>
+                <div>
+                  <div style="font-weight:600; font-size:13px; color:var(--dark);">LLM Text Engine</div>
+                  <div style="display:flex; align-items:center; font-size:11px; color:var(--success); margin-top:2px;">
+                    <div style="width:6px; height:6px; border-radius:50%; background:var(--success); margin-right:5px; box-shadow:0 0 6px var(--success);"></div> Online & Scanning
+                  </div>
+                </div>
+              </div>
+
+              <div style="flex:1; min-width:160px; background:rgba(247, 37, 133, 0.05); border:1px solid rgba(247, 37, 133, 0.15); border-radius:8px; padding:10px 14px; display:flex; align-items:center;">
+                <div style="width:32px; height:32px; border-radius:6px; background:rgba(247, 37, 133, 0.1); display:flex; align-items:center; justify-content:center; margin-right:10px; color:#f72585;">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </div>
+                <div>
+                  <div style="font-weight:600; font-size:13px; color:var(--dark);">CNN Visual Engine</div>
+                  <div style="display:flex; align-items:center; font-size:11px; color:var(--success); margin-top:2px;">
+                    <div style="width:6px; height:6px; border-radius:50%; background:var(--success); margin-right:5px; box-shadow:0 0 6px var(--success);"></div> Layout Protected
+                  </div>
+                </div>
+              </div>
+
+              <div style="flex:1; min-width:160px; background:rgba(76, 201, 164, 0.05); border:1px solid rgba(76, 201, 164, 0.15); border-radius:8px; padding:10px 14px; display:flex; align-items:center;">
+                <div style="width:32px; height:32px; border-radius:6px; background:rgba(76, 201, 164, 0.1); display:flex; align-items:center; justify-content:center; margin-right:10px; color:#4cc9a4;">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                </div>
+                <div>
+                  <div style="font-weight:600; font-size:13px; color:var(--dark);">GNN Threat Graph</div>
+                  <div style="display:flex; align-items:center; font-size:11px; color:var(--success); margin-top:2px;">
+                    <div style="width:6px; height:6px; border-radius:50%; background:var(--success); margin-right:5px; box-shadow:0 0 6px var(--success);"></div> Nodes Synced
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Anchors Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Anchors</h3>
+          </div>
+
+          <div class="controls-row">
+            <button id="anchorNowBtnTop" class="btn btn-outline">Anchor Last 50 Rows</button>
+            <button id="anchorTestBtnTop" class="btn btn-outline">Test Anchor (no tx)</button>
+            <span id="anchorStatusTop" class="muted"></span>
+          </div>
+
+          <div style="display:flex;gap:20px;align-items:flex-start;">
+            <!-- simple recent anchors list -->
+            <div style="flex:1;">
+              <div style="font-weight:600;margin-bottom:12px;color:var(--dark);">Recent anchors</div>
+              <ul id="anchorsList" class="top-list" style="max-height:180px; overflow:auto;">
+                <li class="muted">No anchors yet</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Right Column (Top Lists) -->
+      <div class="col col-4">
+        <div class="card" style="height: 100%;">
+          <div class="card-header">
+            <h3 class="card-title">Top Suspicious Domains</h3>
+          </div>
+          <ul id="topDomains" class="top-list">Loading...</ul>
+        </div>
+        
+        <div class="card" style="margin-top: 16px; height: 100%;">
+          <div class="card-header">
+            <h3 class="card-title">Top Keywords</h3>
+          </div>
+          <ul id="topKeywords" class="top-list">Loading...</ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed Anchors Table -->
+    <div class="row">
+      <div class="col col-12">
+        <div class="card anchors-table-wrapper">
+          <div class="anchors-table-header">
+            <h3 class="anchors-table-title">Anchor History (Detailed)</h3>
+          </div>
+          
+          <div class="table-container" style="max-height:280px; overflow:auto;">
+            <table id="anchorsTableDetailed">
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Rows</th>
+                  <th>Batch Hash</th>
+                  <th>Tx Hash</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="5" class="muted" style="text-align:center;padding:20px;">No anchors yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row" style="margin-top: 20px;">
+      <div class="col col-8">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Risk Distribution & Trends</h3>
+          </div>
+          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 300px;">
+              <div class="chart-container">
+                <canvas id="pieChart"></canvas>
+              </div>
+            </div>
+            <div style="flex: 1; min-width: 300px;">
+              <div class="chart-container">
+                <canvas id="lineChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Legend -->
+      <div class="col col-4">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Risk Legend</h3>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="badge badge-high">High Risk</span>
+              <span style="font-size:14px;">Malicious / high risk</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="badge badge-medium">Medium Risk</span>
+              <span style="font-size:14px;">Suspicious activity</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="badge badge-low">Low Risk</span>
+              <span style="font-size:14px;">Verified safe</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Model Performance Charts -->
+    <div class="row" style="margin-top: 20px;">
+      <div class="col col-12">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Model Performance Comparison</h3>
+          </div>
+          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 300px;">
+              <div class="chart-container">
+                <canvas id="modelComparisonChart"></canvas>
+              </div>
+            </div>
+            <div style="flex: 1; min-width: 300px;">
+              <div class="chart-container">
+                <canvas id="modelTrendsChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Table -->
+    <div class="row" style="margin-top: 20px;">
+      <div class="col col-12">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Recent Checks</h3>
+          </div>
+          <table id="resultsTable">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Risk Level</th>
+                <th>Phish Score</th>
+                <th>LLM Score</th>
+                <th>CNN Score</th>
+                <th>GNN Score</th>
+                <th>Screenshot</th>
+                <th>Text/URL</th>
+                <th>Reasons</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="highlightInfo" class="highlightNote hidden"></div>
+  </div>
+
+  <!-- PREVIEW MODAL (added) -->
+  <div id="modelUI_previewModal" style="display:none;position:fixed;right:18px;bottom:18px;background:#ffffff;padding:12px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.25);width:360px;z-index:9999;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <strong>Model detail</strong>
+      <button id="modelUI_closePreview" style="background:none;border:none;font-size:18px;cursor:pointer">✕</button>
+    </div>
+    <div id="modelUI_previewContent" style="margin-top:8px;font-size:13px"></div>
+  </div>
+
+<script>
+  // Chart instances
+  let pieChart, lineChart, modelComparisonChart, modelTrendsChart;
+
+  /* draw helpers */
+  function initPieChart(ctx, counts) {
+    if (pieChart) pieChart.destroy();
+    pieChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+        datasets: [{
+          data: [counts.high, counts.medium, counts.low],
+          backgroundColor: [
+            'rgba(247, 37, 133, 0.8)',
+            'rgba(255, 158, 0, 0.8)',
+            'rgba(76, 201, 164, 0.8)'
+          ],
+          borderColor: [
+            'rgba(247, 37, 133, 1)',
+            'rgba(255, 158, 0, 1)',
+            'rgba(76, 201, 164, 1)'
+          ],
+          borderWidth: 1,
+          hoverOffset: 10
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, pointStyle: 'circle' } },
+          tooltip: { callbacks: { label: function(context) { return `${context.label}: ${context.raw}`; } } }
+        },
+        cutout: '60%'
+      }
+    });
+  }
+
+  function initLineChart(ctx, points) {
+    if (lineChart) lineChart.destroy();
+    const labels = points.map((p, i) => i + 1);
+    const data = points.map(p => p.y);
+    lineChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [{ label: 'Risk Score', data, fill: true, backgroundColor: 'rgba(67, 97, 238, 0.1)', borderColor: 'rgba(67, 97, 238, 1)', borderWidth: 2, pointRadius: 3, pointHoverRadius: 5, tension: 0.3 }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, max: 1, ticks: { callback: function(value) { return value.toFixed(1); } } },
+          x: { title: { display: true, text: 'Last 30 Checks' } }
+        },
+        plugins: { tooltip: { callbacks: { label: function(context) { return `Score: ${context.raw.toFixed(2)}`; } } } }
+      }
+    });
+  }
+
+  // Model comparison chart
+  function initModelComparisonChart(ctx, data) {
+    if (modelComparisonChart) modelComparisonChart.destroy();
+    
+    const llmScores = data.map(row => parseFloat(row.text_score || 0) || 0);
+    const cnnScores = data.map(row => parseFloat(row.cnn_score || 0) || 0);
+    const gnnScores = data.map(row => parseFloat(row.gnn_score || 0) || 0);
+    
+    modelComparisonChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['LLM', 'CNN', 'GNN'],
+        datasets: [{
+          label: 'Average Score',
+          data: [
+            llmScores.reduce((a, b) => a + b, 0) / llmScores.length,
+            cnnScores.reduce((a, b) => a + b, 0) / cnnScores.length,
+            gnnScores.reduce((a, b) => a + b, 0) / gnnScores.length
+          ],
+          backgroundColor: [
+            'rgba(67, 97, 238, 0.8)',
+            'rgba(247, 37, 133, 0.8)',
+            'rgba(76, 201, 164, 0.8)'
+          ],
+          borderColor: [
+            'rgba(67, 97, 238, 1)',
+            'rgba(247, 37, 133, 1)',
+            'rgba(76, 201, 164, 1)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { 
+            beginAtZero: true, 
+            max: 1,
+            ticks: { 
+              callback: function(value) { 
+                return (value * 100).toFixed(0) + '%'; 
+              } 
+            } 
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `Average Score: ${(context.raw * 100).toFixed(1)}%`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Model trends chart
+  function initModelTrendsChart(ctx, data) {
+    if (modelTrendsChart) modelTrendsChart.destroy();
+    
+    const recentData = data.slice(-20); // Last 20 entries
+    const labels = recentData.map((_, i) => i + 1);
+    
+    const llmScores = recentData.map(row => parseFloat(row.text_score || 0) || 0);
+    const cnnScores = recentData.map(row => parseFloat(row.cnn_score || 0) || 0);
+    const gnnScores = recentData.map(row => parseFloat(row.gnn_score || 0) || 0);
+    
+    modelTrendsChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'LLM Score',
+            data: llmScores,
+            borderColor: 'rgba(67, 97, 238, 1)',
+            backgroundColor: 'rgba(67, 97, 238, 0.1)',
+            tension: 0.3
+          },
+          {
+            label: 'CNN Score',
+            data: cnnScores,
+            borderColor: 'rgba(247, 37, 133, 1)',
+            backgroundColor: 'rgba(247, 37, 133, 0.1)',
+            tension: 0.3
+          },
+          {
+            label: 'GNN Score',
+            data: gnnScores,
+            borderColor: 'rgba(76, 201, 164, 1)',
+            backgroundColor: 'rgba(76, 201, 164, 0.1)',
+            tension: 0.3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { 
+            beginAtZero: true, 
+            max: 1,
+            ticks: { 
+              callback: function(value) { 
+                return (value * 100).toFixed(0) + '%'; 
+              } 
+            } 
+          },
+          x: { 
+            title: { 
+              display: true, 
+              text: 'Last 20 Checks' 
+            } 
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.dataset.label}: ${(context.raw * 100).toFixed(1)}%`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // ---------------------------
+  // Small utilities
+  // ---------------------------
+  function escapeHtml(str) {
+    if (!str && str !== 0) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function shortHash(h) {
+    if (!h) return '';
+    const s = String(h);
+    if (s.length <= 14) return s;
+    return s.slice(0, 8) + '…' + s.slice(-6);
+  }
+
+  function getHostnameFromUrl(url) {
+    try { return new URL(url).hostname; } catch (e) { return url || ''; }
+  }
+
+  // ---------------------------
+  // Server / aggregate helpers
+  // ---------------------------
+  async function checkLogExists() {
+    try {
+      const resp = await fetch('/aggregate/has_log');
+      if (resp.ok) {
+        const j = await resp.json().catch(() => ({}));
+        if (j && (j.exists === true || j.exists === false)) return !!j.exists;
+      }
+    } catch (_) {}
+    try {
+      const resp2 = await fetch('/aggregate/report?format=json');
+      return resp2.ok;
+    } catch (e) {
+      console.error('checkLogExists fallback failed', e);
+      return false;
+    }
+  }
+
+  async function fetchReportJson() {
+    try {
+      const res = await fetch('/aggregate/report?format=json');
+      if (!res.ok) {
+        console.warn('fetchReportJson: not ok', res.status);
+        return [];
+      }
+      return await res.json();
+    } catch (e) {
+      console.error('fetchReportJson error', e);
+      return [];
+    }
+  }
+
+  async function fetchAnchors() {
+    try {
+      const r = await fetch('/aggregate/anchors');
+      if (!r.ok) return [];
+      const j = await r.json();
+      return j.data || [];
+    } catch (e) {
+      console.error('fetchAnchors error', e);
+      return [];
+    }
+  }
+
+  async function fetchTopDomains() {
+    try {
+      const r = await fetch('/aggregate/top_domains');
+      if (!r.ok) return [];
+      const j = await r.json();
+      return j.data || [];
+    } catch (e) { console.error('fetchTopDomains', e); return []; }
+  }
+
+  async function fetchTopKeywords() {
+    try {
+      const r = await fetch('/aggregate/top_keywords');
+      if (!r.ok) return [];
+      const j = await r.json();
+      return j.data || [];
+    } catch (e) { console.error('fetchTopKeywords', e); return []; }
+  }
+
+  // ---------------------------
+  // Anchoring helpers (unchanged logic)
+  // ---------------------------
+  async function anchorNow(n = 50, test_mode = false) {
+    const statusEl = document.getElementById('dashboardStatus');
+    const anchorStatusEl = document.getElementById('anchorStatusTop') || document.getElementById('anchorStatus') || statusEl;
+    const anchorBtns = Array.from(document.querySelectorAll('#anchorNowBtn, #anchorTestBtn, #anchorNowBtnTop, #anchorTestBtnTop'));
+    anchorBtns.forEach(b => { if (b) b.disabled = true; });
+    if (statusEl) statusEl.textContent = test_mode ? 'Creating test anchor...' : 'Sending anchor transaction...';
+    if (anchorStatusEl) anchorStatusEl.innerHTML = `<span class="anchor-status">${test_mode ? 'Creating test anchor...' : 'Sending anchor transaction...'}</span>`;
+    try {
+      const resp = await fetch('/aggregate/anchor', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ n: n, test_mode: test_mode, wait: true })
+      });
+      let j = {};
+      try { j = await resp.json(); } catch (e) { j = {}; }
+      if (resp.ok && j && j.ok) {
+        const batchHash = j.batch_hash || j.hash || j.batchHash || '';
+        const txhash = j.tx_hash || j.txHash || j.txhash || j.tx || '';
+        let statusHtml = '';
+        if (batchHash) statusHtml += `<span class="anchor-status" title="${batchHash}">Anchored: ${shortHash(batchHash)}</span>`;
+        else statusHtml += `<span class="anchor-status">Anchor created</span>`;
+        if (txhash) {
+          const chainId = j.chain_id || j.chainId || j.chain;
+          const explorer = chainId ? getExplorerForChain(chainId, txhash) : null;
+          if (explorer && explorer !== "#") statusHtml += ` <span class="anchor-error"><a target="_blank" rel="noopener" href="${explorer}" title="${txhash}">view tx ${shortHash(txhash)}</a></span>`;
+          else statusHtml += ` <span class="anchor-error">tx: <code title="${txhash}">${shortHash(txhash)}</code></span>`;
+        } else {
+          statusHtml += ` <span class="anchor-error">Test mode (no blockchain tx)</span>`;
+        }
+        if (anchorStatusEl) anchorStatusEl.innerHTML = statusHtml;
+        if (statusEl) statusEl.textContent = 'Anchor succeeded';
+        await loadAnchorsToUI();
+        return j;
+      }
+      // error handling:
+      let errorText = '';
+      if (j && j.error) {
+        errorText = typeof j.error === 'object' ? (j.error.message || JSON.stringify(j.error)) : String(j.error);
+      } else if (j && (j.message || j.err || j.error_message)) {
+        errorText = j.message || j.err || j.error_message;
+      } else {
+        errorText = `HTTP ${resp.status}`;
+      }
+      if (/already known/i.test(errorText)) {
+        const txhash = (j && (j.tx_hash || j.txHash || j.tx)) || null;
+        let html = `<span class="anchor-status anchor-fail" title="${escapeHtml(errorText)}">Anchor failed: tx already known</span>`;
+        if (txhash) {
+          const chainId = j.chain_id || j.chainId || j.chain;
+          const explorer = chainId ? getExplorerForChain(chainId, txhash) : null;
+          if (explorer && explorer !== "#") html += ` <span class="anchor-error">(<a class="anchor-explorer" target="_blank" rel="noopener" href="${explorer}" title="${txhash}">view tx ${shortHash(txhash)}</a>)</span>`;
+          else html += ` <span class="anchor-error">(tx: <code title="${txhash}">${shortHash(txhash)}</code>)</span>`;
+        } else html += ` <span class="anchor-error">(${escapeHtml(errorText)})</span>`;
+        if (anchorStatusEl) anchorStatusEl.innerHTML = html;
+        if (statusEl) statusEl.textContent = 'Anchor failed: tx already known';
+        await loadAnchorsToUI();
+        return { ok: false, error: errorText };
+      }
+      if (anchorStatusEl) anchorStatusEl.innerHTML = `<span class="anchor-status">Anchor failed: ${escapeHtml(errorText)}</span>`;
+      if (statusEl) statusEl.textContent = 'Anchor failed';
+      console.error('anchorNow response error:', j);
+      await loadAnchorsToUI();
+      return { ok: false, error: errorText };
+    } catch (e) {
+      console.error('anchorNow exception', e);
+      const anchorStatusEl = document.getElementById('anchorStatusTop') || document.getElementById('anchorStatus') || document.getElementById('dashboardStatus');
+      if (anchorStatusEl) anchorStatusEl.innerHTML = `<span class="anchor-status">Anchor failed: network error</span> <span class="anchor-error">${escapeHtml(String(e))}</span>`;
+      if (statusEl) statusEl.textContent = 'Anchor failed: network error';
+      return { ok: false, error: String(e) };
+    } finally {
+      anchorBtns.forEach(b => { if (b) b.disabled = false; });
+    }
+  }
+
+  function getExplorerForChain(chain_id, tx_hash) {
+    const mapping = { "80001": "https://mumbai.polygonscan.com/tx/", "11155111": "https://sepolia.etherscan.io/tx/", "5": "https://goerli.etherscan.io/tx/", "1": "https://etherscan.io/tx/" };
+    const prefix = mapping[String(chain_id)] || "";
+    return prefix ? prefix + tx_hash : "#";
+  }
+
+  async function loadAnchorsToUI() {
+    const anchors = await fetchAnchors();
+    const listEl = document.getElementById('anchorsList');
+    if (listEl) {
+      listEl.innerHTML = '';
+      if (!anchors || anchors.length === 0) listEl.innerHTML = '<li class="muted">No anchors yet</li>';
+      else anchors.slice().reverse().forEach(a => {
+        const li = document.createElement('li');
+        const firstIdx = a.first_row_index ?? a.first_idx ?? a.firstIdx ?? '?';
+        const lastIdx = a.last_row_index ?? a.last_idx ?? a.lastIdx ?? '?';
+        const ts = a.timestamp ? new Date(a.timestamp).toLocaleString() : 'no-time';
+        const b = a.batch_hash || a.hash || '';
+        li.textContent = `${ts} — rows ${firstIdx}-${lastIdx} — ${shortHash(b)}`;
+        li.title = b || '';
+        listEl.appendChild(li);
+      });
+    }
+
+    const tableBody = document.querySelector('#anchorsTableDetailed tbody');
+    if (tableBody) {
+      tableBody.innerHTML = '';
+      if (!anchors || anchors.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="5" class="muted" style="text-align:center;padding:20px;">No anchors yet</td></tr>';
+        return;
+      }
+      anchors.slice().reverse().forEach(a => {
+        const tr = document.createElement('tr');
+        const dt = a.timestamp ? new Date(a.timestamp) : null;
+        const timestr = dt ? dt.toLocaleString('en-IN') : 'no-time';
+        const firstIdx = a.first_row_index ?? a.first_idx ?? a.firstIdx ?? '?';
+        const lastIdx = a.last_row_index ?? a.last_idx ?? a.lastIdx ?? '?';
+        const rows = `${firstIdx}-${lastIdx}`;
+        const batchFull = a.batch_hash || a.batchHash || a.hash || '';
+        const txFull = a.tx_hash || a.txHash || a.tx || '';
+        const batchCell = batchFull ? `<code title="${escapeHtml(batchFull)}">${escapeHtml(shortHash(batchFull))}</code>` : '—';
+        let txCell = 'TEST';
+        if (txFull) {
+          const cid = a.chain_id || a.chainId || a.chain;
+          const explorer = cid ? getExplorerForChain(cid, txFull) : null;
+          if (explorer && explorer !== "#") txCell = `<a target="_blank" rel="noopener" href="${explorer}" title="${escapeHtml(txFull)}">${shortHash(txFull)}</a>`;
+          else txCell = `<code title="${escapeHtml(txFull)}">${shortHash(txFull)}</code>`;
+        }
+        let statusLabel = 'Test';
+        if (a.status === 1 || (txFull && a.status !== 'failed')) statusLabel = 'Confirmed';
+        else if (a.status === 0 || a.status === 'pending' || a.status === 'sent') statusLabel = 'Pending';
+        else if (a.status === 'failed') statusLabel = 'Failed';
+        tr.innerHTML = `<td>${timestr}</td><td>${rows}</td><td>${batchCell}</td><td>${txCell}</td><td>${statusLabel}</td>`;
+        tableBody.appendChild(tr);
+      });
+    }
+  }
+
+  // ---------------------------
+  // Table rendering
+  // ---------------------------
+  function renderTable(data, highlightHost) {
+    const tbody = document.querySelector('#resultsTable tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    const rows = Array.isArray(data) ? data.slice().reverse() : [];
+    // Filter out internal localhost screenshot log entries
+    const filteredRows = rows.filter(row => {
+      const u = (row.url || '').toLowerCase();
+      return !(u.includes('127.0.0.1') && u.includes('/static/screenshots/'));
+    });
+    filteredRows.slice(0, 500).forEach((row, idx) => {
+      const tr = document.createElement('tr');
+      tr.dataset.url = row.url || row.text_excerpt || '';
+      const timeDate = row.timestamp ? new Date(row.timestamp) : null;
+      const timeStr = timeDate && !isNaN(timeDate.getTime()) ? 
+        `<div style="font-weight:600;white-space:nowrap;color:var(--dark);">${timeDate.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div><div style="font-size:12px;white-space:nowrap;color:var(--gray-500);">${timeDate.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false})}</div>` : 
+        '<div class="muted">—</div>';
+      const labelRaw = (row.label || '').toString().toLowerCase();
+      const label = labelRaw || 'low';
+      const scoreRaw = parseFloat(row.combined_score || row.aggregate_score || 0) || 0;
+      const scorePct = Math.round(Math.max(0, Math.min(1, scoreRaw)) * 100);
+      let riskTier = 'low';
+      if (scoreRaw >= 0.75) riskTier = 'high';
+      else if (scoreRaw >= 0.4) riskTier = 'medium';
+      const fillWidth = Math.max(3, scorePct);
+      const fillClass = riskTier === 'high' ? 'risk-high' : riskTier === 'medium' ? 'risk-medium' : 'risk-low';
+      const scoreHtml = `<div style="display:flex;align-items:center;gap:8px;"><div class="risk-bar" aria-hidden="true"><div class="risk-bar-fill ${fillClass}" style="width:${fillWidth}%;"></div></div><span class="risk-pct">${scorePct}%</span></div>`;
+      let rawReasons = '';
+      if (row.combined_reasons) rawReasons = String(row.combined_reasons);
+      else if (row.reasons) rawReasons = Array.isArray(row.reasons) ? row.reasons.join('; ') : String(row.reasons);
+      else if (row.cnn_reasons) rawReasons = Array.isArray(row.cnn_reasons) ? row.cnn_reasons.join('; ') : String(row.cnn_reasons);
+      else rawReasons = '';
+      // Show raw reasons from the log, truncated nicely
+      let reasonsShort = rawReasons ? rawReasons.slice(0, 160) : '—';
+      // Extract individual model scores
+      const llmScore = parseFloat(row.text_score || 0) || 0;
+      const cnnScore = parseFloat(row.cnn_score || 0) || 0;
+      const gnnScore = parseFloat(row.gnn_score || 0) || 0;
+      
+      // Format individual scores
+      const llmPct = Math.round(Math.max(0, Math.min(1, llmScore)) * 100);
+      const cnnPct = Math.round(Math.max(0, Math.min(1, cnnScore)) * 100);
+      const gnnPct = Math.round(Math.max(0, Math.min(1, gnnScore)) * 100);
+      
+      const llmHtml = `<span class="risk-pct">${llmPct}%</span>`;
+      const cnnHtml = `<span class="risk-pct">${cnnPct}%</span>`;
+      const gnnHtml = `<span class="risk-pct">${gnnPct}%</span>`;
+      
+      const text = (row.text_excerpt || '').toString().slice(0, 80).replace(/\n/g, ' ');
+      const displayText = (row.url || text).toString().slice(0, 120);
+      const ssUrl = row.screenshot_url || '';
+      const ssHtml = ssUrl ? `<a href="${ssUrl}" target="_blank" style="display:inline-flex;align-items:center;padding:4px 8px;background:var(--primary-light);color:var(--primary);text-decoration:none;font-weight:600;border-radius:6px;font-size:12px;transition:0.2s;"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" style="margin-right:4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>View</a>` : '<span class="muted">—</span>';
+      
+      const tsVal = escapeHtml(row.timestamp || '');
+      const delHtml = `<button onclick="deleteLogViaFetch(event, '${tsVal}')" title="Delete Log" style="margin-left:8px;background:transparent;border:none;cursor:pointer;color:var(--danger, #f72585);padding:4px;"><svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>`;
+
+      tr.innerHTML = `<td>${timeStr}</td><td><span class="badge badge-${label}">${label.toUpperCase()}</span></td><td>${scoreHtml}</td><td>${llmHtml}</td><td>${cnnHtml}</td><td>${gnnHtml}</td><td style="text-align:center;">${ssHtml}${delHtml}</td><td title="${escapeHtml(displayText)}">${escapeHtml(displayText)}</td><td title="${escapeHtml(String(rawReasons))}">${escapeHtml(String(reasonsShort))}</td>`;
+      if (highlightHost) {
+        const rowUrl = (row.url || "").toString();
+        try {
+          const parsed = new URL(rowUrl);
+          if (parsed.hostname && parsed.hostname.includes(highlightHost)) tr.classList.add('highlightRow');
+        } catch (e) {
+          if (rowUrl.includes(highlightHost)) tr.classList.add('highlightRow');
+        }
+      }
+      tr.dataset.index = idx;
+      tr.style.cursor = 'pointer';
+      tr.addEventListener('click', () => {
+        const existing = document.getElementById('expandedRow');
+        if (existing) { existing.remove(); return; }
+        const expanded = document.createElement('tr');
+        expanded.id = 'expandedRow';
+        const td = document.createElement('td');
+        td.colSpan = 9;
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'close-btn';
+        closeBtn.innerHTML = '×';
+        closeBtn.addEventListener('click', (e) => { e.stopPropagation(); expanded.remove(); });
+        const pre = document.createElement('pre');
+        pre.className = 'rawPre';
+        pre.textContent = JSON.stringify(row, null, 2);
+        pre.appendChild(closeBtn);
+        td.appendChild(pre);
+        expanded.appendChild(td);
+        tr.parentNode.insertBefore(expanded, tr.nextSibling);
+        expanded.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  function summarizeCounts(data) {
+    const counts = { high: 0, medium: 0, low: 0 };
+    const points = [];
+    (data || []).forEach((r, i) => {
+      // Skip internal screenshot log entries from charts too
+      const u = (r.url || '').toLowerCase();
+      if (u.includes('127.0.0.1') && u.includes('/static/screenshots/')) return;
+      const l = (r.label || 'low').toString().toLowerCase();
+      if (l === 'high') counts.high++;
+      else if (l === 'medium') counts.medium++;
+      else counts.low++;
+      // Use combined_score (correct backend field name)
+      points.push({ x: i, y: parseFloat(r.combined_score || r.aggregate_score || 0) });
+    });
+    return { counts, points };
+  }
+
+  function scrollToFirstHighlight() {
+    const first = document.querySelector('.highlightRow');
+    if (!first) return false;
+    try {
+      first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      first.classList.add('pulse');
+      setTimeout(() => first.classList.remove('pulse'), 2200);
+      return true;
+    } catch (e) { console.error('scrollToFirstHighlight error', e); return false; }
+  }
+
+  // ---------------------------
+  // Init/render flow
+  // ---------------------------
+  let currentData = [];
+
+  function applyFilters() {
+    const label = document.getElementById('labelFilter').value;
+    const df = document.getElementById('dateFrom').value;
+    const dt = document.getElementById('dateTo').value;
+    let filtered = currentData.slice();
+    if (label) filtered = filtered.filter(r => (r.label || '').toLowerCase() === label);
+    if (df) {
+      const fromTs = new Date(df).getTime();
+      filtered = filtered.filter(r => new Date(r.timestamp || 0).getTime() >= fromTs);
+    }
+    if (dt) {
+      const toTs = new Date(dt).getTime() + 24 * 3600 * 1000 - 1;
+      filtered = filtered.filter(r => new Date(r.timestamp || 0).getTime() <= toTs);
+    }
+    const highlightParam = getHighlightParam();
+    const highlightHost = highlightParam ? getHostnameFromUrl(decodeURIComponent(highlightParam)) : null;
+    renderTable(filtered, highlightHost);
+    const { counts, points } = summarizeCounts(filtered);
+    initPieChart(document.getElementById('pieChart').getContext('2d'), counts);
+    initLineChart(document.getElementById('lineChart').getContext('2d'), points.slice(-30));
+    initModelComparisonChart(document.getElementById('modelComparisonChart').getContext('2d'), filtered);
+    initModelTrendsChart(document.getElementById('modelTrendsChart').getContext('2d'), filtered);
+    document.getElementById('countHigh').textContent = counts.high;
+    document.getElementById('countMedium').textContent = counts.medium;
+    document.getElementById('countLow').textContent = counts.low;
+    try { if (typeof modelUI_addActionsToTableRows === 'function') modelUI_addActionsToTableRows(); } catch (e) { console.warn('addActions failed', e); }
+    if (highlightHost) setTimeout(() => scrollToFirstHighlight(), 250);
+  }
+
+  function getHighlightParam() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('highlight') || null;
+  }
+
+  async function renderTopLists() {
+    const domains = await fetchTopDomains();
+    const domEl = document.getElementById('topDomains');
+    domEl.innerHTML = '';
+    if (!domains || domains.length === 0) domEl.innerHTML = '<li class="muted">No data available</li>';
+    else domains.slice(0, 10).forEach(d => { const li = document.createElement('li'); li.innerHTML = `<span>${d.domain}</span> <strong>${d.count}</strong>`; domEl.appendChild(li); });
+
+    const keywords = await fetchTopKeywords();
+    const kwEl = document.getElementById('topKeywords');
+    kwEl.innerHTML = '';
+    if (!keywords || keywords.length === 0) kwEl.innerHTML = '<li class="muted">No data available</li>';
+    else keywords.slice(0, 10).forEach(k => { const li = document.createElement('li'); li.innerHTML = `<span>${k.keyword}</span> <strong>${k.count}</strong>`; kwEl.appendChild(li); });
+  }
+
+  async function init() {
+    const statusEl = document.getElementById('dashboardStatus');
+    if (statusEl) statusEl.textContent = 'Checking logs...';
+    const hasLog = await checkLogExists();
+    const downloadBtn = document.getElementById('downloadCsvBtn');
+    if (downloadBtn) downloadBtn.disabled = !hasLog;
+    if (statusEl) statusEl.textContent = hasLog ? 'Log available' : 'No logs yet';
+    const data = await fetchReportJson();
+    currentData = Array.isArray(data) ? data : [];
+    document.getElementById('total').textContent = currentData.length;
+    document.getElementById('lastUpdated').textContent = currentData && currentData.length ? 'Last updated ' + new Date().toLocaleTimeString() : '';
+    const { counts, points } = summarizeCounts(currentData);
+    document.getElementById('countHigh').textContent = counts.high;
+    document.getElementById('countMedium').textContent = counts.medium;
+    document.getElementById('countLow').textContent = counts.low;
+    initPieChart(document.getElementById('pieChart').getContext('2d'), counts);
+    initLineChart(document.getElementById('lineChart').getContext('2d'), points.slice(-30));
+    initModelComparisonChart(document.getElementById('modelComparisonChart').getContext('2d'), currentData);
+    initModelTrendsChart(document.getElementById('modelTrendsChart').getContext('2d'), currentData);
+    renderTopLists();
+
+    const highlightParam = getHighlightParam();
+    let highlightHost = null;
+    if (highlightParam) {
+      try {
+        const decoded = decodeURIComponent(highlightParam);
+        highlightHost = getHostnameFromUrl(decoded);
+        const note = document.getElementById('highlightInfo');
+        note.classList.remove('hidden');
+        note.textContent = `Showing results (highlighted) for: ${highlightHost}`;
+      } catch (e) { console.error('highlight parse error', e); }
+    }
+
+    if (!currentData || currentData.length === 0) {
+      document.getElementById('resultsTable').style.display = 'none';
+    } else {
+      document.getElementById('resultsTable').style.display = '';
+      renderTable(currentData, highlightHost);
+      try { if (typeof modelUI_addActionsToTableRows === 'function') modelUI_addActionsToTableRows(); } catch (e) { console.warn('addActions failed', e); }
+      if (highlightHost) setTimeout(() => scrollToFirstHighlight(), 250);
+    }
+
+    await loadAnchorsToUI();
+    
+    // Auto-poll model statuses on load so they are live
+    if (typeof modelUI_refreshGraphAndCnnStatus === 'function') {
+      setTimeout(() => modelUI_refreshGraphAndCnnStatus(), 100);
+    }
+  }
+
+  // -------------------------
+  // MODEL UI additions (namespaced: modelUI_)
+  // -------------------------
+  const modelUI_tinyPNGBase64 =
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+
+  async function modelUI_setBanner(cnnText, gnnNodes) {
+    const elState = document.getElementById('modelUI_cnnState');
+    const elNodes = document.getElementById('modelUI_gnnNodes');
+    const elLast = document.getElementById('modelUI_lastCheck');
+    const cnnDot = document.getElementById('cnnDot');
+    const gnnDot = document.getElementById('gnnDot');
+    
+    if (elState) elState.innerText = cnnText;
+    if (elNodes) elNodes.innerText = String(gnnNodes || 0);
+    if (elLast) elLast.innerText = `last check: ${new Date().toLocaleTimeString()}`;
+    
+    if (cnnDot) {
+      if (cnnText === 'Working') cnnDot.style.background = 'var(--success)';
+      else if (cnnText.includes('Limited')) cnnDot.style.background = 'var(--warning)';
+      else cnnDot.style.background = 'var(--danger)';
+    }
+    
+    if (gnnDot) {
+      if (gnnNodes > 0) gnnDot.style.background = 'var(--success)';
+      else gnnDot.style.background = 'var(--warning)';
+    }
+  }
+
+  // model status probe
+  async function modelUI_refreshGraphAndCnnStatus() {
+    try {
+      let nodes = 0;
+      try {
+        const r = await fetch('/graph/reload', { method: 'POST' });
+        if (r.ok) {
+          const j = await r.json().catch(() => ({}));
+          nodes = j.nodes || 0;
+        }
+      } catch (e) { console.warn('graph/reload probe failed', e); }
+      let cnnState = 'Checking...';
+      try {
+        const payload = { image_b64: modelUI_tinyPNGBase64, text: "cnn selftest" };
+        const r2 = await fetch('/analyze/multi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const j2 = await r2.json().catch(() => ({}));
+        if (r2.ok && (typeof j2.cnn_score_raw === 'number' || (Array.isArray(j2.cnn_reasons) && j2.cnn_reasons.length > 0))) cnnState = 'Working';
+        else if (r2.ok) cnnState = 'Limited (no image model detected)';
+        else cnnState = 'Not active';
+      } catch (e) { console.warn('cnn selftest error', e); cnnState = 'Error'; }
+      await modelUI_setBanner(cnnState, nodes);
+      return { cnnState, nodes };
+    } catch (e) { console.error('modelUI_refresh error', e); await modelUI_setBanner('Error', 0); return { cnnState: 'Error', nodes: 0, error: String(e) }; }
+  }
+
+  // ---------------------------
+  // robust extraction helpers used by model actions + preview
+  // ---------------------------
+  function _findFirstMatchingValue(obj, keyCandidates = []) {
+    if (!obj || typeof obj !== 'object') return undefined;
+    for (const k of keyCandidates) {
+      if (k in obj && obj[k] !== undefined && obj[k] !== null) return obj[k];
+    }
+    for (const vKey of Object.keys(obj)) {
+      try {
+        const v = obj[vKey];
+        if (v && typeof v === 'object') {
+          const nested = _findFirstMatchingValue(v, keyCandidates);
+          if (nested !== undefined) return nested;
+        }
+      } catch (e) {}
+    }
+    return undefined;
+  }
+
+  function _toNumberSafe(v) {
+    if (v === undefined || v === null) return NaN;
+    if (typeof v === 'number') return v;
+    try {
+      const s = String(v).trim().replace('%', '');
+      const n = parseFloat(s);
+      return isNaN(n) ? NaN : n;
+    } catch (e) { return NaN; }
+  }
+
+  function _extractScoreAndNeighbors(jsonObj, type = 'gnn') {
+    const scoreKeys = type === 'gnn' ? ['gnn_score_raw', 'gnn_score', 'graph_score', 'score_raw', 'score', 'similarity'] : ['cnn_score_raw', 'cnn_score', 'visual_score', 'score_raw', 'score'];
+    const rawScore = _findFirstMatchingValue(jsonObj, scoreKeys);
+    let score = _toNumberSafe(rawScore);
+    if (!isNaN(score) && score > 1 && score <= 100) score = score / 100;
+    if (isNaN(score)) score = 0;
+    const neighborKeys = ['neighbors_found', 'gnn_neighbors', 'neighbors_count', 'neighbors', 'top_neighbors_count'];
+    const rawNeighbors = _findFirstMatchingValue(jsonObj, neighborKeys);
+    const neighbors = rawNeighbors === undefined ? 0 : (parseInt(rawNeighbors, 10) || 0);
+    return { score, neighbors, rawScore };
+  }
+
+  // ---------------------------
+  // add GNN/CNN buttons to each table row (single, cleaned function)
+  // ---------------------------
+  function modelUI_addActionsToTableRows() {
+    // Disabled logic to remove Actions column from dashboard
+  }
+
+    // ---------------------------
+  // Dashboard: quick-run CNN/GNN from banner
+  // ---------------------------
+  function modelUI_getTargetUrlOrFirstRow() {
+    // 1) if highlight param present, use that
+    const h = getHighlightParam();
+    if (h) {
+      try { return decodeURIComponent(h); } catch (e) { return h; }
+    }
+    // 2) fallback: first visible row in results table (4th column contains text/url)
+    try {
+      const firstRow = document.querySelector('#resultsTable tbody tr');
+      if (firstRow) {
+        const urlCell = firstRow.querySelector('td:nth-child(4)');
+        if (urlCell) return urlCell.textContent.trim();
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  async function modelUI_runDashboardGNN() {
+    const target = modelUI_getTargetUrlOrFirstRow();
+    if (!target) { alert('No URL found to check (open dashboard with ?highlight=<url> or ensure results table is populated)'); return; }
+    const domain = getHostnameFromUrl(target);
+    modelUI_setBanner('Probing GNN...', '...');
+    modelUI_showPreview({}, 'GNN — running check…', {});
+    try {
+      const r = await fetch('/analyze/multi', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ type: 'gnn', payload: { url: target, domain } })
+      });
+      const j = await r.json().catch(() => ({}));
+      const { score, neighbors } = _extractScoreAndNeighbors(j, 'gnn');
+      const pct = Math.round(Math.max(0, Math.min(1, score)) * 100);
+      const short = `GNN check — ${pct}% similarity.`;
+      modelUI_showPreview(null, short, Object.assign({}, j, { __modelui_gnn_pct: pct, __modelui_neighbors: neighbors }));
+      await modelUI_refreshGraphAndCnnStatus();
+    } catch (e) {
+      console.error('modelUI_runDashboardGNN error', e);
+      modelUI_showPreview(null, 'GNN check failed (network). Check console.', { error: String(e) });
+      await modelUI_refreshGraphAndCnnStatus();
+    } finally {
+      // reset banner time
+      modelUI_setBanner(document.getElementById('modelUI_cnnState')?.innerText || 'Ready', document.getElementById('modelUI_gnnNodes')?.innerText || '?');
+    }
+  }
+
+  async function modelUI_runDashboardCNN() {
+    const target = modelUI_getTargetUrlOrFirstRow();
+    if (!target) { alert('No URL found to check (open dashboard with ?highlight=<url> or ensure results table is populated)'); return; }
+    const domain = getHostnameFromUrl(target);
+    modelUI_setBanner('Probing CNN...', '...');
+    modelUI_showPreview({}, 'CNN — running quick visual check…', {});
+    try {
+      // we don't have the screenshot from table; call server to run a fast imageless/cached CNN check.
+      const r = await fetch('/analyze/multi', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ type: 'cnn', payload: { url: target, domain } })
+      });
+      const j = await r.json().catch(() => ({}));
+      const { score } = _extractScoreAndNeighbors(j, 'cnn');
+      const pct = Math.round(Math.max(0, Math.min(1, score)) * 100);
+      const label = j.cnn_label || (pct >= 75 ? 'PHISH-LIKE' : pct >= 40 ? 'SUSPICIOUS' : 'LIKELY SAFE');
+      const short = `Visual check — ${label} (${pct}%).`;
+      modelUI_showPreview(null, short, Object.assign({}, j, { __modelui_cnn_pct: pct }));
+      await modelUI_refreshGraphAndCnnStatus();
+    } catch (e) {
+      console.error('modelUI_runDashboardCNN error', e);
+      modelUI_showPreview(null, 'CNN check failed (network). Check console.', { error: String(e) });
+      await modelUI_refreshGraphAndCnnStatus();
+    } finally {
+      modelUI_setBanner(document.getElementById('modelUI_cnnState')?.innerText || 'Ready', document.getElementById('modelUI_gnnNodes')?.innerText || '?');
+    }
+  }
+
+  // Hook the banner buttons once DOMReady wiring runs (add to existing wiring area)
+  // Add these event listeners near the bottom of your DOMContentLoaded wiring:
+  // (you can add these lines where modelRefreshBtn is wired)
+
+
+
+  // ---------------------------
+  // Preview renderer (single source of truth)
+  // ---------------------------
+  function modelUI_showPreview(rowOrElement, shortText, jsonObj) {
+    const modal = document.getElementById('modelUI_previewModal');
+    const content = document.getElementById('modelUI_previewContent');
+    if (!modal || !content) return;
+    const info = (jsonObj && typeof jsonObj === 'object') ? jsonObj : {};
+    // Prefer injected internal fields when present
+    const gnn = _extractScoreAndNeighbors(info, 'gnn');
+    const cnn = _extractScoreAndNeighbors(info, 'cnn');
+
+    let html = `<div style="font-weight:700;margin-bottom:8px;">${escapeHtml(shortText)}</div>`;
+
+    if (info.__modelui_gnn_pct !== undefined || info.__modelui_cnn_pct !== undefined) {
+      if (info.__modelui_gnn_pct !== undefined) {
+        const pct = info.__modelui_gnn_pct;
+        html += `<div style="margin-bottom:8px;">Summary: This item is <strong>${pct}%</strong> similar to known suspicious sites (graph/gnn signal).</div>`;
+        html += `<div style="font-size:13px;color:#555;margin-bottom:8px;">Neighbors found: ${info.__modelui_neighbors ?? gnn.neighbors}</div>`;
+      } else {
+        const pct = info.__modelui_cnn_pct;
+        const label = info.cnn_label || (pct >= 75 ? 'PHISH-LIKE' : pct >= 40 ? 'SUSPICIOUS' : 'LIKELY SAFE');
+        html += `<div style="margin-bottom:8px;">Summary: Visual check shows <strong>${label}</strong> — roughly <strong>${pct}%</strong> similarity.</div>`;
+        html += `<div style="font-size:13px;color:#555;margin-bottom:8px;">Neighbors found: ${info.__modelui_neighbors ?? cnn.neighbors}</div>`;
+      }
+    } else {
+      if ((info.gnn_score_raw !== undefined || info.gnn_score !== undefined || info.graph_score !== undefined) || gnn.score > 0) {
+        const pct = Math.round(Math.max(0, Math.min(1, gnn.score)) * 100);
+        html += `<div style="margin-bottom:8px;">Summary: This item is <strong>${pct}%</strong> similar to known suspicious sites. (0% = unrelated, 100% = very similar)</div>`;
+        html += `<div style="font-size:13px;color:#555;margin-bottom:8px;">Neighbors found: ${gnn.neighbors}</div>`;
+      } else if ((info.cnn_score_raw !== undefined || info.cnn_score !== undefined || info.visual_score !== undefined) || cnn.score > 0) {
+        const pct = Math.round(Math.max(0, Math.min(1, cnn.score)) * 100);
+        const label = info.cnn_label || (pct >= 75 ? 'PHISH-LIKE' : pct >= 40 ? 'SUSPICIOUS' : 'LIKELY SAFE');
+        html += `<div style="margin-bottom:8px;">Summary: Visual check shows <strong>${label}</strong> — roughly <strong>${pct}%</strong> similarity to suspicious screenshots.</div>`;
+        html += `<div style="font-size:13px;color:#555;margin-bottom:8px;">Neighbors found: ${cnn.neighbors}</div>`;
+      } else if (Object.keys(info).length === 0) {
+        html += `<div style="margin-bottom:8px;color:#666;">No extra details were returned by the server.</div>`;
+      } else {
+        html += `<div style="margin-bottom:8px;color:#666;">Details available — expand to view raw data.</div>`;
+      }
+    }
+
+    html += `<details style="margin-top:6px"><summary style="font-size:13px;color:#666">Show raw data</summary><pre style="white-space:pre-wrap;margin-top:8px;font-size:12px;background:#f7f7f7;padding:10px;border-radius:6px;">${escapeHtml(JSON.stringify(info, null, 2))}</pre></details>`;
+
+    content.innerHTML = html;
+    modal.style.display = 'block';
+  }
+
+  // ---------------------------
+  // CSV download helper
+  // ---------------------------
+  async function downloadCsvViaFetch() {
+    const statusEl = document.getElementById('dashboardStatus');
+    try {
+      if (statusEl) statusEl.textContent = 'Downloading...';
+      const resp = await fetch('/aggregate/report?format=csv');
+      if (!resp.ok) {
+        const txt = await resp.text().catch(()=>'');
+        if (statusEl) statusEl.textContent = 'Download failed: ' + resp.status;
+        console.error('downloadCsv failed', resp.status, txt);
+        return;
+      }
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const filename = `phishfree_report_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.csv`;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      if (statusEl) statusEl.textContent = 'Download started';
+    } catch (e) {
+      console.error('downloadCsvViaFetch error', e);
+      const statusEl2 = document.getElementById('dashboardStatus');
+      if (statusEl2) statusEl2.textContent = 'Download failed';
+    }
+  }
+
+  // ---------------------------
+  // Clear Logs helper
+  // ---------------------------
+  async function clearLogsViaFetch() {
+    if (!confirm("Are you sure you want to permanently delete all logs? This cannot be undone.")) return;
+    
+    const statusEl = document.getElementById('dashboardStatus');
+    try {
+      if (statusEl) statusEl.textContent = 'Clearing logs...';
+      const resp = await fetch('/aggregate/report', { method: 'DELETE' });
+      if (!resp.ok) {
+        throw new Error('Server returned ' + resp.status);
+      }
+      if (statusEl) statusEl.textContent = 'Logs cleared';
+      // refresh UI
+      init();
+    } catch (e) {
+      console.error('clearLogs error', e);
+      if (statusEl) statusEl.textContent = 'Clear failed';
+    }
+  }
+
+  // ---------------------------
+  // Delete Single Log helper
+  // ---------------------------
+  async function deleteLogViaFetch(event, timestamp) {
+    if (event) event.stopPropagation();
+    if (!timestamp) return;
+    if (!confirm("Delete this log entry?")) return;
+    
+    const statusEl = document.getElementById('dashboardStatus');
+    try {
+      if (statusEl) statusEl.textContent = 'Deleting log...';
+      const resp = await fetch('/aggregate/report?timestamp=' + encodeURIComponent(timestamp), { method: 'DELETE' });
+      if (!resp.ok) throw new Error('Server returned ' + resp.status);
+      if (statusEl) statusEl.textContent = 'Log deleted';
+      init();
+    } catch (e) {
+      console.error('delete log error', e);
+      if (statusEl) statusEl.textContent = 'Delete failed';
+    }
+  }
+
+  window.deleteLogViaFetch = deleteLogViaFetch;
+
+  // ---------------------------
+  // Wiring after DOM ready
+  // ---------------------------
+  document.addEventListener('DOMContentLoaded', () => {
+    const refreshBtn = document.getElementById('refreshBtn');
+    const downloadBtn = document.getElementById('downloadCsvBtn');
+    const clearLogsBtn = document.getElementById('clearLogsBtn');
+    const labelFilter = document.getElementById('labelFilter');
+    const dateFrom = document.getElementById('dateFrom');
+    const dateTo = document.getElementById('dateTo');
+
+    if (refreshBtn) refreshBtn.addEventListener('click', init);
+    if (downloadBtn) downloadBtn.addEventListener('click', (e) => { e.preventDefault(); downloadCsvViaFetch(); });
+    if (clearLogsBtn) clearLogsBtn.addEventListener('click', (e) => { e.preventDefault(); clearLogsViaFetch(); });
+    if (labelFilter) labelFilter.addEventListener('change', applyFilters);
+    if (dateFrom) dateFrom.addEventListener('change', applyFilters);
+    if (dateTo) dateTo.addEventListener('change', applyFilters);
+
+    const anchorNowBtn = document.getElementById('anchorNowBtn');
+    const anchorTestBtn = document.getElementById('anchorTestBtn');
+    const anchorNowBtnTop = document.getElementById('anchorNowBtnTop');
+    const anchorTestBtnTop = document.getElementById('anchorTestBtnTop');
+
+    function guardAnchorClick(btn, n, testMode) {
+      if (!btn) return;
+      btn.addEventListener('click', async (e) => {
+        try { btn.disabled = true; await anchorNow(n, testMode); } finally { btn.disabled = false; }
+      });
+    }
+
+    guardAnchorClick(anchorNowBtn, 50, false);
+    guardAnchorClick(anchorTestBtn, 50, true);
+    guardAnchorClick(anchorNowBtnTop, 50, false);
+    guardAnchorClick(anchorTestBtnTop, 50, true);
+
+    const modelRefreshBtn = document.getElementById('modelUI_refreshBtn');
+    if (modelRefreshBtn && typeof modelUI_refreshGraphAndCnnStatus === 'function') {
+      modelRefreshBtn.addEventListener('click', async () => {
+        modelRefreshBtn.disabled = true;
+        try { await modelUI_refreshGraphAndCnnStatus(); } finally { modelRefreshBtn.disabled = false; }
+      });
+    }
+
+    const modelClose = document.getElementById('modelUI_closePreview');
+    if (modelClose) {
+      modelClose.addEventListener('click', () => {
+        const modal = document.getElementById('modelUI_previewModal');
+        if (modal) modal.style.display = 'none';
+      });
+    }
+
+    // initial load
+    loadAnchorsToUI();
+    init();
+  });
+</script>
+ 
+</body>
+</html>
